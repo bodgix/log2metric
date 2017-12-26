@@ -9,6 +9,13 @@ import (
 	"os"
 )
 
+// TODO: Re-write using channels.
+//       openLogFile would return a channel from which a parser would
+//       read lines
+
+//        This way it's possible to tail the fail instead of reading it
+//        periodically.
+
 var errNoMoreLines = errors.New("No more lines in the log file")
 
 type logFile interface {
