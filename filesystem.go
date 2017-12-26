@@ -23,6 +23,7 @@ type fileSystem interface {
 	Open(name string) (file, error)
 	Create(name string) (file, error)
 	OpenFile(name string, flag int, perm os.FileMode) (file, error)
+	Stat(name string) (os.FileInfo, error)
 }
 
 type file interface {
@@ -47,4 +48,8 @@ func (osFS) Create(name string) (file, error) {
 func (osFS) OpenFile(name string, flag int, perm os.FileMode) (file, error) {
 	f, err := os.OpenFile(name, flag, perm)
 	return f, err
+}
+
+func (osFS) Stat(name string) (os.FileInfo, error) {
+	return os.Stat(name)
 }

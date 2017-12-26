@@ -33,9 +33,9 @@ func openLogFile(name, stateFile string, fs fileSystem) (logFile, error) {
 	log.Print("Opened the log file")
 	sfLog.logReader = bufio.NewReader(sfLog.logFile)
 
-	f, err = fs.OpenFile(stateFile, os.O_RDWR, 0660)
+	f, err = openStateFile(stateFile, fs)
 	if err != nil {
-		log.Print("Error opening the state file ", err)
+		log.Print("Error openning the state file ", err)
 		return sfLog, err
 	}
 	log.Print("Opened the state file")
@@ -52,6 +52,13 @@ func openLogFile(name, stateFile string, fs fileSystem) (logFile, error) {
 	sfLog.logFile.Seek(lastPos, os.SEEK_SET)
 
 	return sfLog, err
+}
+
+func openStateFile(name string, fs fileSystem) (file, error) {
+	if _, err := fs.Stat(name); os.IsNotExist(err) {
+		return fs.Create(name)
+	}
+	return fs.OpenFile(name, os.O_RDWR, 0660)
 }
 
 func getLastPos(stateFile io.Reader) (int64, error) {
