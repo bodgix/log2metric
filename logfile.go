@@ -2,26 +2,11 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 )
-
-// TODO: Re-write using channels.
-//       openLogFile would return a channel from which a parser would
-//       read lines
-
-//        This way it's possible to tail the fail instead of reading it
-//        periodically.
-
-var errNoMoreLines = errors.New("No more lines in the log file")
-
-type logFile interface {
-	io.Closer
-	nextLine() (string, error)
-}
 
 type statefulLogFile struct {
 	logFile   file
@@ -30,14 +15,41 @@ type statefulLogFile struct {
 	lastLine  bool
 }
 
-func openLogFile(name, stateFile string, fs fileSystem) (logFile, error) {
+func readLogFile(name, stateFile string, outCh chan<- string, errCh chan<- error) {
+	logFile, err := openLogFile(name, stateFile)
+	defer close(outCh)
+
+	if err != nil {
+		log.Println("Error opening the log file ", err)
+		errCh <- err
+	} else {
+		defer logFile.Close()
+
+		var line string
+		for {
+			line, err = logFile.logReader.ReadString('\n')
+			if err != nil {
+				if err != io.EOF {
+					errCh <- err
+					break
+				} else {
+					outCh <- line
+					break
+				}
+			}
+			outCh <- line
+		}
+	}
+}
+
+func openLogFile(name, stateFile string) (*statefulLogFile, error) {
 	sfLog := &statefulLogFile{}
 	f, err := fs.Open(name)
 	if err != nil {
 		return sfLog, err
 	}
 	sfLog.logFile = f
-	log.Print("Opened the log file")
+	log.Print("Opened the log file ", f)
 	sfLog.logReader = bufio.NewReader(sfLog.logFile)
 
 	f, err = openStateFile(stateFile, fs)
@@ -45,7 +57,7 @@ func openLogFile(name, stateFile string, fs fileSystem) (logFile, error) {
 		log.Print("Error openning the state file ", err)
 		return sfLog, err
 	}
-	log.Print("Opened the state file")
+	log.Print("Opened the state file ", f)
 	sfLog.stateFile = f
 
 	var lastPos int64
@@ -56,6 +68,7 @@ func openLogFile(name, stateFile string, fs fileSystem) (logFile, error) {
 	}
 	sfLog.stateFile.Seek(0, os.SEEK_SET)
 
+	log.Print("Seeking the log file to position ", lastPos)
 	sfLog.logFile.Seek(lastPos, os.SEEK_SET)
 
 	return sfLog, err
@@ -94,18 +107,4 @@ func (lf *statefulLogFile) Close() error {
 
 	_, err = fmt.Fprintf(lf.stateFile, "%d", pos)
 	return err
-}
-
-func (lf *statefulLogFile) nextLine() (string, error) {
-	if lf.lastLine {
-		return "", errNoMoreLines
-	}
-
-	switch line, err := lf.logReader.ReadString('\n'); err {
-	case io.EOF:
-		lf.lastLine = true
-		return line, nil
-	default:
-		return line, err
-	}
 }

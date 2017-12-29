@@ -1,26 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"log"
 )
 
 func main() {
-	lf, err := openLogFile("apache.log", "/tmp/apache_log_state", fs)
-	if err != nil {
-		log.Fatal("Cannot open logfile ", err)
-	}
-	parser, err := buildParser("simple")
-	if err != nil {
-		log.Fatal(err)
-	}
-	metrics, err := parser.parseLogFile(lf, "test", `(?P<resp_time>[\d.]+)`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%v\n", metrics)
-	err = lf.Close()
-	if err != nil {
-		log.Fatal(err)
+	logLinesCh := make(chan string)
+	errCh := make(chan error)
+	metricsCh := make(chan metric)
+
+	defer close(errCh)
+
+	go readLogFile("apache.log", "/tmp/apache_log_state", logLinesCh, errCh)
+	go parseLogFile(logLinesCh, metricsCh, `(?P<resp_time>[\d.]+)`)
+
+	fin := false
+
+	for !fin {
+		select {
+		case m, ok := <-metricsCh:
+			if ok {
+				log.Println("Received a new metric: ", m)
+			} else {
+				log.Println("Metrics channel was closed")
+				fin = true
+			}
+		case err := <-errCh:
+			log.Println("Received an error: ", err)
+			fin = true
+		}
 	}
 }
