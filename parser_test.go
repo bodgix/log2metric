@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -12,31 +11,11 @@ func TestParseLogFile(t *testing.T) {
 	logCh := make(chan string)
 	metricsCh := make(chan metric)
 	expected := []metric{
-		metric{
-			t:     simple,
-			name:  "resp_time",
-			value: float64(0.567),
-		},
-		metric{
-			t:     simple,
-			name:  "resp_bytes",
-			value: float64(5000),
-		},
-		metric{
-			t:     simple,
-			name:  "resp_time",
-			value: float64(0.432),
-		},
-		metric{
-			t:     simple,
-			name:  "resp_bytes",
-			value: float64(4567),
-		},
-		metric{
-			t:     simple,
-			name:  "resp_bytes",
-			value: float64(4567),
-		},
+		metric{simple, "resp_time", float64(0.567)},
+		metric{simple, "resp_bytes", float64(5000)},
+		metric{simple, "resp_time", float64(0.432)},
+		metric{simple, "resp_bytes", float64(4567)},
+		metric{simple, "resp_bytes", float64(4567)},
 	}
 
 	// Test
@@ -49,7 +28,6 @@ func TestParseLogFile(t *testing.T) {
 	}()
 	i := 0
 	for m := range metricsCh {
-		fmt.Println("Metric: ", m, "i: ", i)
 		if expected[i] != m {
 			t.Error("Expected: ", expected[i], "Got: ", m)
 		}
