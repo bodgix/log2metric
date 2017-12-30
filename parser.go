@@ -31,7 +31,7 @@ func parseLogFile(input <-chan string, output chan<- metric, regExp string) {
 			if name == "" {
 				continue
 			}
-			val, err := strconv.ParseFloat(matches[i], 32)
+			val, err := strconv.ParseFloat(matches[i], 64)
 			if err != nil {
 				continue
 			}
