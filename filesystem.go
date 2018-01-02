@@ -20,7 +20,6 @@ import (
 var fs fileSystem = osFS{}
 
 type fileSystem interface {
-	Open(name string) (file, error)
 	Create(name string) (file, error)
 	OpenFile(name string, flag int, perm os.FileMode) (file, error)
 	Stat(name string) (os.FileInfo, error)

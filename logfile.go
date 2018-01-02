@@ -12,7 +12,6 @@ type statefulLogFile struct {
 	logFile   file
 	logReader *bufio.Reader
 	stateFile file
-	lastLine  bool
 }
 
 func readLogFile(name, stateFile string, outCh chan<- string, errCh chan<- error) {
@@ -44,7 +43,7 @@ func readLogFile(name, stateFile string, outCh chan<- string, errCh chan<- error
 
 func openLogFile(name, stateFile string) (*statefulLogFile, error) {
 	sfLog := &statefulLogFile{}
-	f, err := fs.Open(name)
+	f, err := fs.OpenFile(name, os.O_RDONLY, 0660)
 	if err != nil {
 		return sfLog, err
 	}

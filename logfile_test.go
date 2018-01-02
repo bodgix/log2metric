@@ -33,7 +33,11 @@ func (f testFile) Read(p []byte) (int, error) {
 
 type mockFS struct{}
 
-func (mockFS) Open(name string) (file, error) {
+func (mockFS) Create(name string) (file, error) {
+	return new(testFile), nil
+}
+
+func (fs mockFS) OpenFile(name string, flag int, perm os.FileMode) (file, error) {
 	log.Print("mockFS is opening the ", name, " file")
 	var lines []string
 	var err error
@@ -46,14 +50,6 @@ func (mockFS) Open(name string) (file, error) {
 	}
 	buf := testFile{bytes.NewReader([]byte(strings.Join(lines, "\n"))), &bytes.Buffer{}}
 	return buf, err
-}
-
-func (mockFS) Create(name string) (file, error) {
-	return new(testFile), nil
-}
-
-func (fs mockFS) OpenFile(name string, flag int, perm os.FileMode) (file, error) {
-	return fs.Open(name)
 }
 
 func (mockFS) Stat(name string) (os.FileInfo, error) {
