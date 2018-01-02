@@ -35,18 +35,15 @@ type file interface {
 type osFS struct{}
 
 func (osFS) Open(name string) (file, error) {
-	f, err := os.Open(name)
-	return f, err
+	return os.Open(name)
 }
 
 func (osFS) Create(name string) (file, error) {
-	f, err := os.Create(name)
-	return f, err
+	return os.Create(name)
 }
 
 func (osFS) OpenFile(name string, flag int, perm os.FileMode) (file, error) {
-	f, err := os.OpenFile(name, flag, perm)
-	return f, err
+	return os.OpenFile(name, flag, perm)
 }
 
 func (osFS) Stat(name string) (os.FileInfo, error) {
