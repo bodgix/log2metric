@@ -1,3 +1,17 @@
+/*
+A layer of abstraction around file system IO.
+
+Functions that operate on files, use this abstraction instead of
+calling functions from the os package directly.
+
+By default, the functions in this abstraction call the io and os functions
+to open files and do disk IO, but the implementation can be substituted by
+a mock which is done in unit tests.
+
+This code is inspired by:
+https://stackoverflow.com/questions/16742331/how-to-mock-abstract-filesystem-in-go
+*/
+
 package main
 
 import (
@@ -5,18 +19,7 @@ import (
 	"os"
 )
 
-// This file contains a mockable filesystem abstraction that all other files
-// use for all their disk IO needs.
-// By default, the File system is backed by real golang's io package
-// and all IO goes to disk for real.
-// However, the design makes it possible to mock the filesystem operations
-// which can be useful for testing.
-// This code is inspired by:
-// https://stackoverflow.com/questions/16742331/how-to-mock-abstract-filesystem-in-go
-
-// The default filesystem is the Real OS fs so real IO is made by default.
-// For testing, it's possible to use a mock file system though.
-// This code is inspired by https://stackoverflow.com/questions/16742331/how-to-mock-abstract-filesystem-in-go
+// All functions in this pakage interact with the file system via this package variable
 var fs fileSystem = osFS{}
 
 type fileSystem interface {

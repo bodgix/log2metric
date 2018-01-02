@@ -24,6 +24,7 @@ func (testFile) Close() error {
 }
 
 func (f testFile) Write(p []byte) (int, error) {
+	log.Print("Writing ", p, " to the testFile.")
 	return f.Buffer.Write(p)
 }
 
@@ -38,7 +39,6 @@ func (mockFS) Create(name string) (file, error) {
 }
 
 func (fs mockFS) OpenFile(name string, flag int, perm os.FileMode) (file, error) {
-	log.Print("mockFS is opening the ", name, " file")
 	var lines []string
 	var err error
 	if name == "log" {
@@ -92,5 +92,17 @@ func TestReadLogFileOpenStateFileError(t *testing.T) {
 	err := <-errCh
 	if err != openLogError {
 		t.Errorf("Expected error %v, got %v\n", openLogError, err)
+	}
+}
+
+func TestCloseStatefulLogFile(t *testing.T) {
+	logFile := new(statefulLogFile)
+	testFile := &testFile{bytes.NewReader([]byte(strings.Join(logFileLines, "\n"))), new(bytes.Buffer)}
+	logFile.logFile = testFile
+	logFile.stateFile = testFile
+	logFile.Close()
+	got := testFile.String()
+	if got != "0" {
+		t.Error("Expected 0 written to the state file, got ", got)
 	}
 }

@@ -14,6 +14,22 @@ type statefulLogFile struct {
 	stateFile file
 }
 
+// Close save the current position and close the file
+func (lf *statefulLogFile) Close() error {
+	log.Print("Closing the log file")
+	defer lf.logFile.Close()
+	defer lf.stateFile.Close()
+
+	pos, err := lf.logFile.Seek(0, os.SEEK_CUR)
+	if err != nil {
+		return err
+	}
+	log.Printf("The current position in the log file is: %d", pos)
+
+	_, err = fmt.Fprintf(lf.stateFile, "%d", pos)
+	return err
+}
+
 func readLogFile(name, stateFile string, outCh chan<- string, errCh chan<- error) {
 	logFile, err := openLogFile(name, stateFile)
 	defer close(outCh)
@@ -90,20 +106,4 @@ func getLastPos(stateFile io.Reader) (int64, error) {
 		err = nil
 	}
 	return lastPos, err
-}
-
-// Close save the current position and close the file
-func (lf *statefulLogFile) Close() error {
-	log.Print("Closing the log file")
-	defer lf.logFile.Close()
-	defer lf.stateFile.Close()
-
-	pos, err := lf.logFile.Seek(0, os.SEEK_CUR)
-	if err != nil {
-		return err
-	}
-	log.Printf("The current position in the log file is: %d", pos)
-
-	_, err = fmt.Fprintf(lf.stateFile, "%d", pos)
-	return err
 }
