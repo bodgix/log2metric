@@ -1,18 +1,29 @@
 package main
 
 import (
+	"flag"
 	"log"
+	"os"
 )
 
 func main() {
+	opts := parseOptions()
+	if opts.help {
+		flag.Usage()
+		os.Exit(0)
+	}
+	if err := validateOptions(opts); err != nil {
+		log.Fatal(err)
+	}
+
 	logLinesCh := make(chan string)
 	errCh := make(chan error)
 	metricsCh := make(chan metric)
 
 	defer close(errCh)
 
-	go readLogFile("apache.log", "/tmp/apache_log_state", logLinesCh, errCh)
-	go parseLogFile(logLinesCh, metricsCh, `(?P<resp_time>[\d.]+)`)
+	go readLogFile(opts.logFile, opts.stateFile, logLinesCh, errCh)
+	go parseLogFile(logLinesCh, metricsCh, opts.regexp)
 
 	fin := false
 
