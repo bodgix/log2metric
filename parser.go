@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"regexp"
 	"strconv"
 )
@@ -22,7 +21,6 @@ func parseLogFile(input <-chan string, output chan<- metric, regExp string) {
 	defer close(output)
 	exp := regexp.MustCompile(regExp)
 	for line := range input {
-		log.Print("Parsing line: ", line)
 		matches := exp.FindStringSubmatch(line)
 		if matches == nil {
 			continue

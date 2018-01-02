@@ -4,27 +4,24 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
 )
 
 type statefulLogFile struct {
 	logFile   file
-	logReader *bufio.Reader
 	stateFile file
 }
 
 // Close save the current position and close the file
 func (lf *statefulLogFile) Close() error {
-	log.Print("Closing the log file")
 	defer lf.logFile.Close()
 	defer lf.stateFile.Close()
 
+	// read the current position of the log file and save it to the state file
 	pos, err := lf.logFile.Seek(0, os.SEEK_CUR)
 	if err != nil {
 		return err
 	}
-	log.Printf("The current position in the log file is: %d", pos)
 
 	_, err = fmt.Fprintf(lf.stateFile, "%d", pos)
 	return err
@@ -35,19 +32,19 @@ func readLogFile(name, stateFile string, outCh chan<- string, errCh chan<- error
 	defer close(outCh)
 
 	if err != nil {
-		log.Println("Error opening the log file ", err)
 		errCh <- err
 	} else {
 		defer logFile.Close()
 
 		var line string
+		reader := bufio.NewReader(logFile.logFile)
 		for {
-			line, err = logFile.logReader.ReadString('\n')
+			line, err = reader.ReadString('\n')
 			if err != nil {
-				if err != io.EOF {
+				if err != io.EOF { // report all errors except io.EOF
 					errCh <- err
 					break
-				} else {
+				} else { // EOF reached. Send the last line and stop reading
 					outCh <- line
 					break
 				}
@@ -64,26 +61,19 @@ func openLogFile(name, stateFile string) (*statefulLogFile, error) {
 		return sfLog, err
 	}
 	sfLog.logFile = f
-	log.Print("Opened the log file ", f)
-	sfLog.logReader = bufio.NewReader(sfLog.logFile)
 
 	f, err = openStateFile(stateFile, fs)
 	if err != nil {
-		log.Print("Error openning the state file ", err)
 		return sfLog, err
 	}
-	log.Print("Opened the state file ", f)
 	sfLog.stateFile = f
 
 	var lastPos int64
 	lastPos, err = getLastPos(sfLog.stateFile)
 	if err != nil {
-		log.Print("Error getting the last position")
 		return sfLog, err
 	}
 	sfLog.stateFile.Seek(0, os.SEEK_SET)
-
-	log.Print("Seeking the log file to position ", lastPos)
 	sfLog.logFile.Seek(lastPos, os.SEEK_SET)
 
 	return sfLog, err

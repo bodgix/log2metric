@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"errors"
-	"log"
 	"os"
 	"strings"
 	"testing"
@@ -24,7 +23,6 @@ func (testFile) Close() error {
 }
 
 func (f testFile) Write(p []byte) (int, error) {
-	log.Print("Writing ", p, " to the testFile.")
 	return f.Buffer.Write(p)
 }
 
