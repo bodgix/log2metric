@@ -19,26 +19,23 @@ func main() {
 	logLinesCh := make(chan string)
 	errCh := make(chan error)
 	metricsCh := make(chan metric)
+	doneCh := make(chan bool)
 
 	defer close(errCh)
 
 	go readLogFile(opts.logFile, opts.stateFile, logLinesCh, errCh)
 	go parseLogFile(logLinesCh, metricsCh, opts.regexp)
+	go printer.printer(metricsCh, doneCh)
 
-	fin := false
+	done := false
 
-	for !fin {
+	for !done {
 		select {
-		case m, ok := <-metricsCh:
-			if ok {
-				log.Println("Received a new metric: ", m)
-			} else {
-				log.Println("Metrics channel was closed")
-				fin = true
-			}
+		case <-doneCh:
+			done = true
 		case err := <-errCh:
 			log.Println("Received an error: ", err)
-			fin = true
+			done = true
 		}
 	}
 }
