@@ -35,3 +35,26 @@ func TestParseLogFile(t *testing.T) {
 		i++
 	}
 }
+
+func TestHistogramLogParser(t *testing.T) {
+	regexp := `http:\s+(?P<http>[\d]+)`
+	lines := []string{"http: 200", "http: 401", "http: 401", "http: 200", "http: 500"}
+	logCh := make(chan string)
+	metricsCh := make(chan metric)
+	expected := map[string]float64{"http_200": float64(2), "http_401": float64(2), "http_500": float64(1)}
+	parser := new(histogramLogParser)
+
+	// Test
+	go parser.parseLogFile(logCh, metricsCh, regexp)
+	go func() {
+		for _, line := range lines {
+			logCh <- line
+		}
+		close(logCh)
+	}()
+	for m := range metricsCh {
+		if expected[m.name] != m.value {
+			t.Error("Expected: ", expected[m.name], "Got: ", m.value)
+		}
+	}
+}
