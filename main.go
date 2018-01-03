@@ -23,8 +23,10 @@ func main() {
 
 	defer close(errCh)
 
+	parser := getLogParser(opts)
+
 	go readLogFile(opts.logFile, opts.stateFile, logLinesCh, errCh)
-	go parseLogFile(logLinesCh, metricsCh, opts.regexp)
+	go parser.parseLogFile(logLinesCh, metricsCh, opts.regexp)
 	go output.printer(metricsCh, doneCh)
 
 	done := false

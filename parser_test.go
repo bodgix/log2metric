@@ -17,9 +17,10 @@ func TestParseLogFile(t *testing.T) {
 		metric{simple, "resp_bytes", float64(4567)},
 		metric{simple, "resp_bytes", float64(4567)},
 	}
+	parser := new(simpleLogParser)
 
 	// Test
-	go parseLogFile(logCh, metricsCh, regexp)
+	go parser.parseLogFile(logCh, metricsCh, regexp)
 	go func() {
 		for _, line := range lines {
 			logCh <- line

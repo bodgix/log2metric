@@ -13,6 +13,7 @@ type options struct {
 	logFile   string
 	stateFile string
 	prefix    string
+	histogram bool
 	help      bool
 }
 
@@ -22,6 +23,7 @@ func parseOptions() options {
 	flag.StringVar(&opts.logFile, "logfile", "", "full path to the log file")
 	flag.StringVar(&opts.stateFile, "statefile", "", "full path to the state file")
 	flag.StringVar(&opts.prefix, "prefix", "", "prefix to add to metrics names")
+	flag.BoolVar(&opts.histogram, "histogram", false, "run in the histogram mode")
 	flag.BoolVar(&opts.help, "help", false, "print this help")
 
 	flag.Usage = func() {
