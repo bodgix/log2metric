@@ -29,48 +29,53 @@ type metric struct {
 	value float64
 }
 
-type simpleLogParser struct{}
+func parseLines(lines <-chan string, matches chan<- []string, regExp string) {
+	defer close(matches)
 
-func (simpleLogParser) parseLogFile(input <-chan string, output chan<- metric, regExp string) {
-	defer close(output)
 	exp := regexp.MustCompile(regExp)
-	for line := range input {
-		matches := exp.FindStringSubmatch(line)
-		if matches == nil {
+	for line := range lines {
+		ms := exp.FindStringSubmatch(line)
+		if ms == nil {
 			continue
 		}
 		for i, name := range exp.SubexpNames() {
 			if name == "" {
 				continue
 			}
-			val, err := strconv.ParseFloat(matches[i], 64)
-			if err != nil {
-				continue
-			}
-			m := metric{t: simple, name: name, value: val}
-			output <- m
+			matches <- []string{name, ms[i]}
 		}
+	}
+}
+
+type simpleLogParser struct{}
+
+func (simpleLogParser) parseLogFile(input <-chan string, output chan<- metric, regExp string) {
+	defer close(output)
+
+	matches := make(chan []string)
+
+	go parseLines(input, matches, regExp)
+	for match := range matches {
+		val, err := strconv.ParseFloat(match[1], 64)
+		if err != nil {
+			continue
+		}
+		output <- metric{t: simple, name: match[0], value: val}
 	}
 }
 
 type histogramLogParser struct{}
 
 func (histogramLogParser) parseLogFile(input <-chan string, output chan<- metric, regExp string) {
-	histogram := make(map[string]int)
 	defer close(output)
 
-	exp := regexp.MustCompile(regExp)
-	for line := range input {
-		matches := exp.FindStringSubmatch(line)
-		if matches == nil {
-			continue
-		}
-		for i, name := range exp.SubexpNames() {
-			if name == "" {
-				continue
-			}
-			histogram[name+"_"+matches[i]]++
-		}
+	histogram := make(map[string]int)
+	matches := make(chan []string)
+
+	go parseLines(input, matches, regExp)
+
+	for match := range matches {
+		histogram[match[0]+"_"+match[1]]++
 	}
 	for name, val := range histogram {
 		output <- metric{t: histo, name: name, value: float64(val)}
