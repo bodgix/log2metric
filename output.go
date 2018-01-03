@@ -3,14 +3,15 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strconv"
 )
 
-var printer = nagiosPrinter{}
+var output = nagiosPrinter{}
 
 type nagiosPrinter struct{}
 
-func (nagiosPrinter) printer(metricsCh <-chan metric, doneCh chan<- bool) {
+func (nagiosPrinter) printer(metricsCh <-chan metric, doneCh chan<- func()) {
 	done := false
 	metrics := make(map[string][]float64)
 	for !done {
@@ -21,7 +22,8 @@ func (nagiosPrinter) printer(metricsCh <-chan metric, doneCh chan<- bool) {
 		metrics[m.name] = append(metrics[m.name], m.value)
 	}
 	fmt.Println("OK |", perfDataString(metrics))
-	doneCh <- true
+	exitCode := 0
+	doneCh <- func() { os.Exit(exitCode) }
 }
 
 func perfDataString(metrics map[string][]float64) string {

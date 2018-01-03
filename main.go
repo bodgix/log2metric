@@ -19,23 +19,25 @@ func main() {
 	logLinesCh := make(chan string)
 	errCh := make(chan error)
 	metricsCh := make(chan metric)
-	doneCh := make(chan bool)
+	doneCh := make(chan func())
 
 	defer close(errCh)
 
 	go readLogFile(opts.logFile, opts.stateFile, logLinesCh, errCh)
 	go parseLogFile(logLinesCh, metricsCh, opts.regexp)
-	go printer.printer(metricsCh, doneCh)
+	go output.printer(metricsCh, doneCh)
 
 	done := false
+	var exitFunc func()
 
 	for !done {
 		select {
-		case <-doneCh:
+		case exitFunc = <-doneCh:
 			done = true
 		case err := <-errCh:
 			log.Println("Received an error: ", err)
 			done = true
 		}
 	}
+	exitFunc()
 }
