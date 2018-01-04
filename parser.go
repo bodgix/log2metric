@@ -7,6 +7,7 @@ import (
 
 type logParser interface {
 	parseLogFile(input <-chan string, output chan<- metric, regExp string)
+	validateOptions(opts options) error
 }
 
 func getLogParser(opts options) logParser {
@@ -64,6 +65,10 @@ func (simpleLogParser) parseLogFile(input <-chan string, output chan<- metric, r
 	}
 }
 
+func (simpleLogParser) validateOptions(opts options) error {
+	return nil
+}
+
 type histogramLogParser struct{}
 
 func (histogramLogParser) parseLogFile(input <-chan string, output chan<- metric, regExp string) {
@@ -80,4 +85,8 @@ func (histogramLogParser) parseLogFile(input <-chan string, output chan<- metric
 	for name, val := range histogram {
 		output <- metric{t: histo, name: name, value: float64(val)}
 	}
+}
+
+func (histogramLogParser) validateOptions(opts options) error {
+	return nil
 }

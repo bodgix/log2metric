@@ -24,6 +24,9 @@ func main() {
 	defer close(errCh)
 
 	parser := getLogParser(opts)
+	if err := parser.validateOptions(opts); err != nil {
+		log.Fatal(err)
+	}
 
 	go readLogFile(opts.logFile, opts.stateFile, logLinesCh, errCh)
 	go parser.parseLogFile(logLinesCh, metricsCh, opts.regexp)
