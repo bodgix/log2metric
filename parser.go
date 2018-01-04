@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"regexp"
 	"strconv"
 )
@@ -22,6 +23,7 @@ type metricType int
 const (
 	simple metricType = iota
 	histo
+	duration
 )
 
 type metric struct {
@@ -88,5 +90,33 @@ func (histogramLogParser) parseLogFile(input <-chan string, output chan<- metric
 }
 
 func (histogramLogParser) validateOptions(opts options) error {
+	return nil
+}
+
+type eventLogParser struct{}
+
+func (eventLogParser) parseLogFile(input <-chan string, output chan<- metric, regExp string) {
+}
+
+func any(col []string, what string) bool {
+	for _, elem := range col {
+		if elem == what {
+			return true
+		}
+	}
+	return false
+}
+
+func (eventLogParser) validateOptions(opts options) error {
+	exp, err := regexp.Compile(opts.regexp)
+	if err != nil {
+		return err
+	}
+	if !any(exp.SubexpNames(), "event_id") {
+		return errors.New("event_id named group must exist in the regexp")
+	}
+	if !any(exp.SubexpNames(), "ts") {
+		return errors.New("ts named group must exist in the regexp")
+	}
 	return nil
 }

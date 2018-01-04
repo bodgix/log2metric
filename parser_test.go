@@ -58,3 +58,29 @@ func TestHistogramLogParser(t *testing.T) {
 		}
 	}
 }
+
+func TestEventOptionsValidator(t *testing.T) {
+	badRegexp := `(?P<some_capture_group>\d+)`
+	parser := new(eventLogParser)
+	var opts options
+
+	opts.regexp = badRegexp
+	err := parser.validateOptions(opts)
+	if err == nil {
+		t.Error("Expected validation to fail - no event_id in the regexp")
+	}
+
+	badRegexp = `(?P<event_id>\d+) but no ts`
+	opts.regexp = badRegexp
+	err = parser.validateOptions(opts)
+	if err == nil {
+		t.Error("Expected validation to fail - no ts in the regexp")
+	}
+
+	goodRegexp := `(?P<event_id>\d+) something (?P<ts>\d+)`
+	opts.regexp = goodRegexp
+	err = parser.validateOptions(opts)
+	if err != nil {
+		t.Error("Expected validation to succeed but failed with ", err)
+	}
+}
