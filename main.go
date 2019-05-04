@@ -29,7 +29,7 @@ func main() {
 	}
 
 	go readLogFile(opts.logFile, opts.stateFile, logLinesCh, errCh)
-	go parser.parseLogFile(logLinesCh, metricsCh, opts)
+	go parser.parseLogFile(logLinesCh, metricsCh, opts.regexp)
 	go output.printer(metricsCh, doneCh)
 
 	done := false

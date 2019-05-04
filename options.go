@@ -9,33 +9,28 @@ import (
 )
 
 type options struct {
-	regexp            string
-	endRegexp         string
-	logFile           string
-	stateFile         string
-	prefix            string
-	tsFormat          string
-	durationCacheFile string
-	histogram         bool
-	duration          bool
-	help              bool
+	regexp    string
+	logFile   string
+	stateFile string
+	prefix    string
+	histogram bool
+	help      bool
 }
 
-var opts options
-
-func init() {
+func parseOptions() options {
+	var opts options
+	flag.StringVar(&opts.regexp, "regexp", "", "regexp with named captures")
 	flag.StringVar(&opts.logFile, "logfile", "", "full path to the log file")
 	flag.StringVar(&opts.stateFile, "statefile", "", "full path to the state file")
 	flag.StringVar(&opts.prefix, "prefix", "", "prefix to add to metrics names")
+	flag.BoolVar(&opts.histogram, "histogram", false, "run in the histogram mode")
 	flag.BoolVar(&opts.help, "help", false, "print this help")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
 	}
-}
 
-func parseOptions() options {
 	flag.Parse()
 	return opts
 }
